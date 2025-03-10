@@ -105,7 +105,7 @@ async def recibir_mensajes(request: Request):
             message = wpp_tools.text_message(number, respuesta_principal)
             result = wpp_tools.send_to_whatsapp(message)
 
-            link_msj = f"Comunicate con {nombre_agente} haciendo clcik en el link \n-> https://wa.me/" + numero_agente
+            link_msj = f"Comunicate con {nombre_agente} haciendo clcik en el link \n-> https://wa.me/{numero_agente}"
             message = wpp_tools.text_message(number, link_msj)
             result = wpp_tools.send_to_whatsapp(message)
 
