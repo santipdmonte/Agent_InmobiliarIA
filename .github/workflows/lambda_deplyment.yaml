@@ -24,13 +24,18 @@ jobs:
       - name: Install dependencies into package folder
         run: |
           python -m pip install --upgrade pip
-          mkdir package
+          mkdir -p package/app/
           pip install -r requirements.txt -t package
 
       - name: Copy source code to package folder
         run: |
-          # Si tienes carpetas con más código, inclúyelas también, por ejemplo:
-          cp -r app/*
+          # Copy the entire app directory structure
+          cp -r app/* package/app/
+
+      - name: Create Zip file for Lambda function
+        run: |
+          cd package
+          zip -r ../code.zip .
 
       - name: Create Zip file for Lambda function
         run: |
