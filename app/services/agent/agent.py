@@ -38,7 +38,7 @@ def derivar_con_agente(descripcion: str):
     """
 
     nombre = "Rogelio Bianchi"
-    numero_agente = "5493413918907"
+    numero_agente = "5493412594114"
 
     return f"Agente encargado de la propiedad: {nombre} Contacto: {numero_agente}\n"
     # return {
