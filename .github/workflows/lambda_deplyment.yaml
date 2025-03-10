@@ -29,7 +29,6 @@ jobs:
 
       - name: Copy source code to package folder
         run: |
-          cp -r *.py package/
           # Si tienes carpetas con más código, inclúyelas también, por ejemplo:
           cp -r app/*
 
