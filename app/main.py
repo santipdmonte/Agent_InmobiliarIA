@@ -22,9 +22,9 @@ def test(
     ,number: str = "3413918907"
     ):
 
-    respuesta_principal, nombre_agente, numero_agente = agent_initializer(number, txt_message)
+    respuesta_principal, nombre_agente, numero_agente, ia_response = agent_initializer(number, txt_message)
 
-    return {"message": respuesta_principal, "nombre_agente": nombre_agente, "numero_agente": numero_agente}    
+    return {"message": ia_response, "structured_message": respuesta_principal, "nombre_agente": nombre_agente, "numero_agente": numero_agente}    
 
 @app.get("/webhook", response_class=PlainTextResponse)
 async def verificar_token(request: Request):
@@ -98,18 +98,22 @@ async def recibir_mensajes(request: Request):
             # response_list.append(read_response)
 
             # Obtener respuesta del bot
-            respuesta_principal, nombre_agente, numero_agente = agent_initializer(number, text)
+            respuesta_principal, nombre_agente, numero_agente, ia_response= agent_initializer(number, text)
             print(f"\nRespuesta del bot: {respuesta_principal}\n")
 
-            # Preparar respuesta para el usuario
-            message = wpp_tools.text_message(number, respuesta_principal)
-            result = wpp_tools.send_to_whatsapp(message)
+            
 
             if numero_agente:
+                message = wpp_tools.text_message(number, respuesta_principal)
+                result = wpp_tools.send_to_whatsapp(message)
                 link_msj = f"Comunicate con {nombre_agente} presionando el link \n-> https://wa.me/{numero_agente}"
                 message = wpp_tools.text_message(number, link_msj)
                 result = wpp_tools.send_to_whatsapp(message)
 
+            else: 
+                # Preparar respuesta para el usuario
+                message = wpp_tools.text_message(number, ia_response)
+                result = wpp_tools.send_to_whatsapp(message)
 
             print(f"\nResultado del envío: {result}\n")
 

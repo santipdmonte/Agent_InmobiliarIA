@@ -13,13 +13,39 @@ from langchain_core.tools import tool
 from langchain_core.prompts import ChatPromptTemplate
 from typing_extensions import TypedDict
 from pydantic import BaseModel, Field
+from enum import Enum
 
 
 # from langgraph.checkpoint.postgres import PostgresSaver
 # from psycopg_pool import ConnectionPool
 
+class TipoOperacion(str, Enum):
+    COMPRA = "Compra"
+    ALQUILER = "Alquiler"
+    ALQUILER_TEMPORAL = "Alquiler Temporal"
+
+class TipoPropiedad(str, Enum):
+    TERRENO = "Terreno"
+    CASA = "Casa"
+    DEPARTAMENTO = "Departamento"
+    QUITNA = "Quinta"
+    LOCAL = "Local"
+    OFICINA = "Oficina"
+    COCHERA = "Cochera"
+    PH = "PH"
+    FONDO_COMERCIO = "Fondo de Comercio"
+
+
+class InteresCliente(BaseModel):
+    nombre: str = Field(description="Nombre del cliente")
+    mail: str = Field(description="Mail del cliente")
+    tipo_propiedad: Optional[str] = Field(description="Tipo de porpiedad", default=None)
+    tipo_operacion: Optional[TipoOperacion] = Field(description="Tipo de operacion de interes del cliente", default=None)
+    zona: Optional[str] = Field(description="Zona, direccion, calle", default=None)
+    disponibilidad_horaria: Optional[str] = Field(description="Horario en el que el cliente esta disponible para ser contactado", default=None)
+
 class RespuestaAgente(BaseModel):
-    respuesta_principal: str = Field(description="Mensaje que sera enviado al cliente")
+    respuesta_principal: str = Field(description="Mensaje que sera enviado al cliente, no incluir el numero de telefono en este mensaje (sera enviado como un link separado)")
     nombre_agente: Optional[str] = Field(description="Nombre del encargado de la propiedad", default=None)
     numero_agente: Optional[str] = Field(description="numero_agente para hablar con el encargado de la propiedad", default=None)
 
@@ -31,36 +57,63 @@ class State(TypedDict):
 
 
 @tool
-def derivar_con_agente(descripcion: str):
+def derivar_con_agente_encargado(nombre_propiedad: str):
     """
-    Derivar a un agente de ventas.
-    Descripcion: Breve descripcion de la propiedad de interes.
+    Derivar a un agente de ventas encargado de la propiedad. Esta herramienta se utiliza para conectar al cliente con el agente encargado de UNA propiedad en específico.
+    nombre_propiedad: nombre o direcion de la propiedad de interes.
     """
 
-    nombre = "Rogelio Bianchi"
-    numero_agente = "5493412594114"
+    # Llamar a la API de la inmobiliaria para obtener el agente encargado de la propiedad
 
-    return f"Agente encargado de la propiedad: {nombre} Contacto: {numero_agente}\n"
-    # return {
-    #     "respuesta_principal": f"Agente encargado de la propiedad: {nombre} Contacto: {numero_agente}",
-    #     "nombre_agente": nombre,
-    #     "numero_agente": numero_agente,
-    # }
+    return {
+        "nombre_agente": "Rogelio Bianchi",
+        "numero_agente": "5493412594114",
+    }
 
 
-TOOLS = [derivar_con_agente]
+@tool
+def generar_contacto_cliente(info: InteresCliente):
+    """
+    Guardar el contacto del cliente para ser contactado por un agente de ventas a la brevedad.
+
+    nombre: Nombre del cliente
+    mail: Mail del cliente
+    tipo_propiedad: Tipo de propiedad (CASA, DEPARTAMENTO, LOCAL, OFICINA, COCHERA, PH, FONDO_COMERCIO)
+    tipo_operacion: Tipo de operacion de interes del cliente (COMPRA, ALQUILER, ALQUILER_TEMPORAL)
+    zona: Zona, direccion o calle
+    disponibilidad_horaria: Horario en el que el cliente esta disponible para ser contactado
+    """ 
+
+    # Guardar contacto del cliente
+
+    return "Se ha generado el contacto del cliente correctamente. En la brevedad un agente se contactara con el cliente."
+
+
+TOOLS = [generar_contacto_cliente, derivar_con_agente_encargado]
 MODEL = ChatOpenAI(model="gpt-4o-mini")
 checkpointer = MemorySaver()
 PROMPT = "" \
 """
-Eres un asiastente para una inmobiliaria. 
-Te encargas de redireccionar a los clientes con los agentes de ventas relacionados a las propiedades.
+Contexto:
+Eres un asistente inmobiliario que ayuda a los clientes a obtener información o a conectarse con el agente encargado de una propiedad en específico. Dependiendo de la información que te proporcione el cliente, deberás:
 
-Debes utilizar la herramienta 'derivar_con_agente' con una descripcion de la propiedad que busca el cliente.
-Esta herramienta te devolver el numero_agente de wpp para contactar al agente de ventas. 
+Si el cliente menciona una propiedad puntual y concreta:
+Utiliza la herramienta derivar_con_agente_encargado pasando el nombre o direccion de la propiedad para conectarlo directamente con el agente responsable.
+
+Si el cliente desea recibir información o dejar sus datos para que se lo contacten:
+Recaba el nombre, una descripción del interés en alguna propiedad (puede ser general o con algunos detalles) y otros comentarios adicionales, y utiliza la herramienta generar_lead_cliente para crear un lead que permita que un agente se ponga en contacto lo antes posible.
+
+Ejemplo de interacción:
+
+Cliente: “Queria saber mas informacion sobre el departamento de <calle><altura>.”
+Agente: (Se llama a derivar_con_agente_encargado con la descripción proporcionada.)
+
+Cliente: “Quisiera recibir más información sobre de departamentos a la venta en zona centro.”
+Agente: “Perfecto, por favor indícame tu nombre, detalles de lo que buscas y cualquier comentario adicional.”
+(Se llama a generar_contacto_cliente con los datos del cliente.)
+Agente: "En la brevedad se comuinicara un agente. Si te interesa puedes visitar nuestra pagina para ver nuestras opciones proyectou.com.ar"
 
 """
-
 
 
 def create_agent():
@@ -83,7 +136,7 @@ def create_agent():
             
         bound_response = bound_model.invoke(formatted_prompt)
 
-        return {"messages": bound_response , "respuesta": structured_response}
+        return {"messages": bound_response, "respuesta": structured_response}
 
 
 

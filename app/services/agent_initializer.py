@@ -15,8 +15,8 @@ def agent_initializer(phone_number: str, user_input: str):
         "messages": [HumanMessage(content=user_input)]
     }
 
-    fecha_hora_actual = datetime.now().strftime('%Y%m%d')
-    thread_id = f"{phone_number} | {fecha_hora_actual}"
+    fecha_actual = datetime.now().strftime('%Y%m%d')
+    thread_id = f"{phone_number} | {fecha_actual}"
     config = {"configurable": {"thread_id": thread_id, "recursion_limit": 10}}
 
 
@@ -27,6 +27,7 @@ def agent_initializer(phone_number: str, user_input: str):
     response = app.invoke(initial_state, config)
     
     # Obtener el último mensaje (respuesta de IA)
+    ia_response = response["messages"][-1].content
     respuesta = response['respuesta']
     respuesta_principal = respuesta.respuesta_principal
     nombre_agente = respuesta.nombre_agente
@@ -36,4 +37,4 @@ def agent_initializer(phone_number: str, user_input: str):
     print(f"\nAgente: {respuesta}")
     print("\n ==================== Fin mensaje ====================================================")
 
-    return respuesta_principal, nombre_agente, numero_agente
+    return respuesta_principal, nombre_agente, numero_agente, ia_response
